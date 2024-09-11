@@ -1,4 +1,5 @@
 const express = require('express');
+require('dotenv').config();
 const nodemailer = require('nodemailer');
 const User = require('../models/userModel'); // Import the User model
 const { body, validationResult } = require('express-validator');
@@ -9,8 +10,8 @@ const transporter = nodemailer.createTransport({
     secure: false,
     requireTLS: true,
     auth: {
-        user: 'manojku0308@gmail.com', // Your email address
-        pass: 'ovgbtnscrrdrgxtx'   // Your email password or app-specific password
+        user: process.env.SMTP_MAIL, // Your email address
+        pass: process.env.SMTP_PASS   // Your email password or app-specific password
     }
 });
 
