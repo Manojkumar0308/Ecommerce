@@ -18,7 +18,7 @@ const transporter = nodemailer.createTransport({
 
 
 const validateAndSendVerificationEmail = [
-    // body('mobile').isLength({min:10}).withMessage('Mobile number must be 10 digits'),
+   
     body('email').isEmail().withMessage('Must be a valid email'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
     body('firstname').notEmpty().withMessage('First name is required'),

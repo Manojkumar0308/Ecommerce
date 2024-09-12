@@ -1,6 +1,8 @@
 const express = require('express');
+
+const { verifyEmail, loginController, getAllUsers, getUserById, deleteUser, updateUser } = require('../controller/userController');
 const { validateAndSendVerificationEmail } = require('../middlewares/errorHandler');
-const { verifyEmail } = require('../controller/userController');
+const {authMiddleware, isAdmin} = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
@@ -14,5 +16,9 @@ router.post('/send-verification', validateAndSendVerificationEmail, (req, res) =
 
 // Endpoint to verify the email and create the user
 router.post('/verify-email', verifyEmail);
-
+router.post('/login',loginController);
+router.get('/all-users',getAllUsers);
+router.get('/get-user/:id',authMiddleware,isAdmin,getUserById);
+router.delete('/delete-user/:id',deleteUser);
+router.put('/update-user',authMiddleware,updateUser);
 module.exports = router;

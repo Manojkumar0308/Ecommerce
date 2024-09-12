@@ -1,6 +1,7 @@
 const User = require('../models/userModel');
 const asyncHandler = require('express-async-handler');
 const verificationStore = require('../verificationStore'); // Import the verification store
+const {generateToken} = require('../config/jwtToken')
 const verifyEmail = asyncHandler(async (req, res) => {
     try {
         const { email, token } = req.body;
@@ -15,7 +16,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
             });
         }
 
-        // Check if the token matches and hasn't expired
+        
         // Check if the token matches and hasn't expired
         const isTokenValid = storedData.verificationToken === token;
         console.log(isTokenValid);
@@ -65,6 +66,110 @@ const verifyEmail = asyncHandler(async (req, res) => {
     }
 });
 
+//Login Controller
+const loginController = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if(user && (await user.isPasswordMatched(password))) {
+        res.status(200).json({
+            //early code
+            // status: 'success',
+            // message: 'Login successful',
+            // user
 
 
-module.exports = { verifyEmail };
+            //new code with token 
+            _id: user?._id,
+            firstname: user?.firstname,
+            lastname: user?.lastname,
+            email: user?.email,
+            mobile: user?.mobile,
+            token: generateToken(user?._id)
+        });
+    }else{
+        return res.status(401).json({
+            status: 'fail',
+            message: 'Invalid email or password'
+        });
+    }
+})
+
+
+//Get all users.
+ const getAllUsers = asyncHandler(async (req, res) => {
+     try {
+        const users = await User.find();
+        res.status(200).json(users);
+     } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message});
+     }
+ })
+
+ //Get User by id.
+ const getUserById= asyncHandler(async (req, res) => {
+    const { id } = req.params;  
+     try {
+        const getUser = await User.findById(id);
+        res.status(200).json(getUser);
+     } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+     }
+ });
+
+ //update a user
+ const updateUser = asyncHandler(async (req, res) => {
+    console.log(req.user)
+    const { _id } = req.user;
+     // Trim any whitespace or unwanted characters
+    //  id = id.trim();
+    try {
+        // Check if user exists
+        const user = await User.findById(_id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        // Update the user
+        const updatedUser = await User.findByIdAndUpdate(_id, {firstname: req?.body?.firstname, lastname: req?.body?.lastname, mobile: req?.body?.mobile, email: req?.body?.email}, { new: true, runValidators: true });
+
+        res.status(200).json({
+            success: true,
+            message: "User updated successfully",
+            updatedUser: updatedUser
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+
+ //delete a user
+
+ const deleteUser = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    try {
+        const deletedUser = await User.findByIdAndDelete(id);
+        res.status(200).json({success:true,message:"User deleted successfully",deletedUser:deletedUser});
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+})
+
+
+
+module.exports = { verifyEmail,loginController,getAllUsers,getUserById,deleteUser,updateUser };
