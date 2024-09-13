@@ -1,6 +1,6 @@
 const express = require('express');
 
-const { verifyEmail, loginController, getAllUsers, getUserById,userUpdate, deleteUser, blockUser, unblockUser } = require('../controller/userController');
+const { verifyEmail, loginController, getAllUsers, getUserById,userUpdate, deleteUser, blockUser, unblockUser, handleRefreshToken, logoutController } = require('../controller/userController');
 const { validateAndSendVerificationEmail } = require('../middlewares/errorHandler');
 const {authMiddleware, isAdmin} = require('../middlewares/authMiddleware');
 
@@ -23,5 +23,7 @@ router.put('/update-user',authMiddleware,userUpdate);
 router.delete('/delete-user/:id',deleteUser);
 router.put('/block-user/:id',authMiddleware,isAdmin,blockUser);
 router.put('/unblock-user/:id',authMiddleware,isAdmin,unblockUser);
+router.get('/refreshToken',handleRefreshToken);
+router.get('/logout',logoutController);
 
 module.exports = router;

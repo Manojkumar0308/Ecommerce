@@ -4,6 +4,7 @@ const verificationStore = require('../verificationStore'); // Import the verific
 const {generateToken} = require('../config/jwtToken')
 const jwt = require('jsonwebtoken');
 const { validateMongoDbId } = require('../utils/validateMongoDbId');
+const { generateRefreshToken } = require('../config/refreshToken');
 
 
 //verify email
@@ -77,10 +78,15 @@ const loginController = asyncHandler(async (req, res) => {
 
     const user = await User.findOne({ email });
     if(user && (await user.isPasswordMatched(password))) {
+        const refreshToken = await generateRefreshToken(user?._id);
+        const updateUser = await User.findByIdAndUpdate(user._id, {
+            refreshToken: refreshToken
+        }, { new: true });
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            maxAge: 72 * 60 * 60 * 1000
+        });
         res.status(200).json({
-          
-
-
             //new code with token 
             _id: user?._id,
             firstname: user?.firstname,
@@ -97,6 +103,35 @@ const loginController = asyncHandler(async (req, res) => {
     }
 })
 
+//Handle refresh token
+const handleRefreshToken = asyncHandler(async (req, res) => {
+    const cookie = req.cookies;
+    if(!cookie?.refreshToken) return res.status(401).json({
+        message: 'No refresh token in cookie'
+    });
+    const refreshToken = cookie.refreshToken;
+    const user = await User.findOne({ refreshToken });
+    if(!user) {
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: true
+        });
+        return res.status(403).json({
+            message: 'User not found'
+        });
+    }
+    else{
+        jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
+            if(err||user.id !== decoded.id){return res.status(403).json({
+                message: 'Invalid refresh token'    
+            });
+        } else{
+            const accessToken = generateToken(user?._id);
+            return res.status(200).json({accessToken:accessToken});
+            }
+    })
+    }
+});
 
 //Get all users.
  const getAllUsers = asyncHandler(async (req, res) => {
@@ -155,7 +190,30 @@ const loginController = asyncHandler(async (req, res) => {
     
  });
  
+//Logout Controller
 
+const logoutController = asyncHandler(async (req, res) => {
+    const cookie = req.cookies;
+    if(!cookie?.refreshToken) return res.sendStatus(204);
+    const refreshToken = cookie.refreshToken;
+    const user = await User.findOne({ refreshToken });
+    if(!user) {
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: true
+        });
+        return res.sendStatus(204);
+    }
+    const userId = user._id;
+    await User.findByIdAndUpdate(userId, {
+        refreshToken: ''
+    });
+    res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: true
+    });
+    return res.sendStatus(204); 
+});
 
  //delete a user
 
@@ -229,4 +287,4 @@ const unblockUser = asyncHandler(async (req, res) => {
    
 });
 
-module.exports = { verifyEmail,loginController,getAllUsers,getUserById,userUpdate,deleteUser,blockUser,unblockUser};
+module.exports = { verifyEmail,loginController,getAllUsers,getUserById,userUpdate,deleteUser,blockUser,unblockUser,handleRefreshToken,logoutController};
