@@ -2,6 +2,11 @@ const User = require('../models/userModel');
 const asyncHandler = require('express-async-handler');
 const verificationStore = require('../verificationStore'); // Import the verification store
 const {generateToken} = require('../config/jwtToken')
+const jwt = require('jsonwebtoken');
+const { validateMongoDbId } = require('../utils/validateMongoDbId');
+
+
+//verify email
 const verifyEmail = asyncHandler(async (req, res) => {
     try {
         const { email, token } = req.body;
@@ -73,10 +78,7 @@ const loginController = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email });
     if(user && (await user.isPasswordMatched(password))) {
         res.status(200).json({
-            //early code
-            // status: 'success',
-            // message: 'Login successful',
-            // user
+          
 
 
             //new code with token 
@@ -111,6 +113,7 @@ const loginController = asyncHandler(async (req, res) => {
  //Get User by id.
  const getUserById= asyncHandler(async (req, res) => {
     const { id } = req.params;  
+    validateMongoDbId(id);
      try {
         const getUser = await User.findById(id);
         res.status(200).json(getUser);
@@ -123,42 +126,42 @@ const loginController = asyncHandler(async (req, res) => {
  });
 
  //update a user
- const updateUser = asyncHandler(async (req, res) => {
-    console.log(req.user)
-    const { _id } = req.user;
-     // Trim any whitespace or unwanted characters
-    //  id = id.trim();
-    try {
-        // Check if user exists
-        const user = await User.findById(_id);
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
-        }
-
-        // Update the user
-        const updatedUser = await User.findByIdAndUpdate(_id, {firstname: req?.body?.firstname, lastname: req?.body?.lastname, mobile: req?.body?.mobile, email: req?.body?.email}, { new: true, runValidators: true });
-
-        res.status(200).json({
-            success: true,
-            message: "User updated successfully",
-            updatedUser: updatedUser
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-});
+ const userUpdate = asyncHandler(async (req, res) => {
+     console.log('first');
+     console.log(req.user) ;
+     if (!req.user) {
+                return res.status(401).json({ message: 'Not authorized or User not found' });
+              }else{
+                const {_id} = req.user; 
+                validateMongoDbId(_id);
+                try {
+                    const updatedUser = await User.findByIdAndUpdate(
+                      _id,
+                      {
+                        firstname: req?.body?.firstname,
+                        lastname: req?.body?.lastname,
+                        email: req?.body?.email,
+                        mobile: req?.body?.mobile,
+                      },
+                      {
+                        new: true,
+                      }
+                    );
+                    res.status(200).json({success:true,message: 'User updated successfully',updatedUser});
+                  } catch (error) {
+                    res.status(500).json({ success: false, message: error.message });
+                  }
+              }
+    
+ });
+ 
 
 
  //delete a user
 
  const deleteUser = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    validateMongoDbId(id);
     try {
         const deletedUser = await User.findByIdAndDelete(id);
         res.status(200).json({success:true,message:"User deleted successfully",deletedUser:deletedUser});
@@ -170,6 +173,60 @@ const loginController = asyncHandler(async (req, res) => {
     }
 })
 
+//Block a user
+const blockUser = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    validateMongoDbId(id);
+    if(!id){
+        res.status(404).json({success:false,message:"User not found"});
+    }else{
+        try {
+            const blockedUser = await User.findByIdAndUpdate(
+                id,
+                {
+                    isBlocked: true
+                },
+                {
+                    new: true
+                }
+            );
+            res.status(200).json({success:true,message:"User blocked successfully",blockedUser: blockedUser});
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+   
+});
 
+//Unblock a user.
+const unblockUser = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    validateMongoDbId(id);
+    if(!id){
+        res.status(404).json({success:false,message:"User not found"});
+    }else{
+        try {
+            const unblockedUser = await User.findByIdAndUpdate(
+                id,
+                {
+                    isBlocked: false
+                },
+                {
+                    new: true
+                }
+            );
+            res.status(200).json({success:true,message:"User unblocked successfully",unblockedUser: unblockedUser});
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+   
+});
 
-module.exports = { verifyEmail,loginController,getAllUsers,getUserById,deleteUser,updateUser };
+module.exports = { verifyEmail,loginController,getAllUsers,getUserById,userUpdate,deleteUser,blockUser,unblockUser};

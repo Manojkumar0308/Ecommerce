@@ -9,13 +9,16 @@ try {
     if(token){
         
         const verificationToken = jwt.verify(token, process.env.JWT_SECRET);
+        console.log('first')
         console.log(verificationToken)
         const user = await User.findById(verificationToken?.id);
+        console.log('second')
         console.log(user)
         req.user = user;
+        console.log(req.user)
         next();
     }else{
-       res.status(401).json({message:'Not authorized, token failed'});
+       res.status(401).json({message:'Unauthorized, token missing'});
     } 
 } catch (error) {
     res.status(500).json({message:'Not authorized, token failed with 500 serer error'});
@@ -30,11 +33,11 @@ const isAdmin = asyncHandler(async (req, res, next) => {
     console.log(req.user);
     const {email} = req.user;
     const user = await User.findOne({email});
-    if(user.role !== 'admin'){
+    if(user.role === 'admin'){
         next();
     }else{
         res.status(401).json({message:'Not authorized as an admin'});
-        throw new Error('Not authorized as an admin');
+       
     }   
 });
 

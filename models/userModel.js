@@ -38,6 +38,10 @@ const userSchema = new mongoose.Schema({
        type: String,
        default: 'user' 
     },
+    isBlocked: {
+        type: Boolean,
+        default: false
+    },
     cart: {
         type: Array,
         default: []
@@ -58,7 +62,7 @@ const userSchema = new mongoose.Schema({
 
 
 userSchema.pre('save', async function (next) {
-    const salt = await bcrypt.genSaltSync(10);
+    const salt = bcrypt.genSaltSync(10);
     this.password = await bcrypt.hash(this.password, salt); 
     // next();
 });

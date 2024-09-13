@@ -11,6 +11,7 @@ require('dotenv').config();
 const PORT = process.env.PORT || 4000;
 const authRoute = require('./routes/authRoute');
 
+
 console.log('Process.env.PORT:', process.env.PORT); // Should print '3000'
 console.log('PORT:', PORT); // Should print '3000' if dotenv is correctly loaded
 
@@ -25,7 +26,7 @@ app.use('/api/user', authRoute);
 
 // Error handling middlewares
 app.use(validateAndSendVerificationEmail);
-// app.use(errorHandler);
+// app.use(authMiddleware);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
