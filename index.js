@@ -14,13 +14,14 @@ const PORT = process.env.PORT || 4000;
 
 console.log('Process.env.PORT:', process.env.PORT); // Should print '3000'
 console.log('PORT:', PORT); // Should print '3000' if dotenv is correctly loaded
-
+const morgan = require('morgan');
 // Connect to the database
 dbConnect();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(morgan('dev'));
 
 // Use routes
 app.use('/api/user', authRoute);
