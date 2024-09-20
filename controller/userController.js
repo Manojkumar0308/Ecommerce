@@ -189,6 +189,21 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
               }
     
  });
+
+ //updatePassword for user
+ const updatePassword = asyncHandler(async (req,res)=>{
+    const {_id} = req.user;
+    const {password} = req.body;
+    validateMongoDbId(_id);
+    const user = await User.findById(_id);
+    if(password){
+user.password = password;
+const updatedPassword = await user.save();
+res.status(200).json({success:true,message:'Password updated successfully',updatedPassword})
+    }else{
+        res.json(user);
+    }
+ })
  
 //Logout Controller
 
@@ -287,4 +302,4 @@ const unblockUser = asyncHandler(async (req, res) => {
    
 });
 
-module.exports = { verifyEmail,loginController,getAllUsers,getUserById,userUpdate,deleteUser,blockUser,unblockUser,handleRefreshToken,logoutController};
+module.exports = { verifyEmail,loginController,getAllUsers,getUserById,userUpdate,deleteUser,blockUser,unblockUser,handleRefreshToken,logoutController,updatePassword};

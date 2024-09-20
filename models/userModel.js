@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 // Define the User schema
 const userSchema = new mongoose.Schema({
     firstname: {
@@ -58,11 +59,17 @@ const userSchema = new mongoose.Schema({
             ref: 'Product'
         }
     ],
-    refreshToken: { type: String }
+    refreshToken: { type: String },
+    passwordChangedAt: { type: Date },
+    passwordResetToken: { type: String },
+    passwordResetExpires: { type: Date }    
 }, { timestamps: true });
 
 
 userSchema.pre('save', async function (next) {
+    if(!this.isModified('password')) {
+        return next();
+    }
     const salt = bcrypt.genSaltSync(10);
     this.password = await bcrypt.hash(this.password, salt); 
     // next();
@@ -70,6 +77,13 @@ userSchema.pre('save', async function (next) {
 
 userSchema.methods.isPasswordMatched = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
+};
+
+userSchema.methods.createPasswordResetToken = function () {
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    this.passwordResetExpires=Date.now() + 30*60*1000;  //10 minutes.
+    return resetToken;
 };
 // Create the User model
 const User = mongoose.model('User', userSchema);
