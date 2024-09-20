@@ -8,6 +8,7 @@ const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const authRoute = require('./routes/authRoute');
 const productRoute = require('./routes/productRoute');
+const blogRoute = require('./routes/blogRoute');
 // Use default port if environment variable is not set
 const PORT = process.env.PORT || 4000;
 
@@ -26,6 +27,7 @@ app.use(morgan('dev'));
 // Use routes
 app.use('/api/user', authRoute);
 app.use('/api/product', productRoute);
+app.use('/api/blog', blogRoute);
 
 
 // Error handling middlewares
