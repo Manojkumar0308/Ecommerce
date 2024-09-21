@@ -9,10 +9,8 @@ try {
     if(token){
         
         const verificationToken = jwt.verify(token, process.env.JWT_SECRET);
-        console.log('first')
         console.log(verificationToken)
-        const user = await User.findById(verificationToken?.id);
-        console.log('second')
+        const user = await User.findById(verificationToken?.id);     
         console.log(user)
         req.user = user;
         console.log(req.user)
