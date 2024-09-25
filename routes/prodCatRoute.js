@@ -1,0 +1,10 @@
+const express = require('express');
+const route = express.Router();
+const { authMiddleware, isAdmin } = require('../middlewares/authMiddleware');
+const { createProductCategory, getCategory, getAllCategories, updateCategory, deleteCategory } = require('../controller/prodCatController');
+route.post('/create-product-category',authMiddleware,isAdmin, createProductCategory);
+route.get('/get-product-category/:id', getCategory);
+route.get('/',getAllCategories);
+route.put('/update-product-category/:id',authMiddleware,isAdmin,updateCategory);
+route.delete('/delete-product-category/:id',authMiddleware,isAdmin,deleteCategory);
+module.exports = route;

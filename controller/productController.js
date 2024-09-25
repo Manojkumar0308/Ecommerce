@@ -1,4 +1,5 @@
 const Product = require('../models/productModel');
+const User = require('../models/userModel');
 const asyncHandler = require('express-async-handler');
 const slugify = require('slugify');
 const createProduct = asyncHandler(async (req, res) => {
@@ -167,4 +168,87 @@ const getAllProducts = asyncHandler(async (req, res) => {
 });
 
 
-module.exports = {createProduct,getProduct,getAllProducts,updateProduct,deleteProduct};
+//Add to Wishlist with toggle functionality.
+
+const addToWishlist = asyncHandler(async (req, res) => {
+    const { _id } = req.user;
+    const { productId } = req.body;
+    try {
+        const user = await User.findById(_id);
+        const alreadyAdded = user?.wishlist?.find((id) => id.toString() === productId);
+
+        if (alreadyAdded) {
+            let user = await User.findByIdAndUpdate(
+                _id,
+                {
+                    $pull: { wishlist: productId },
+                },
+                {
+                    new: true,
+                }
+            );
+            res.status(200).json(user);
+        } else {
+            let user = await User.findByIdAndUpdate(
+                _id,
+                {
+                    $push: { wishlist: productId },
+                },
+                {
+                    new: true,
+                }
+            );  
+            res.status(200).json(user);
+        }                                           
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }   
+
+});
+
+const rating = asyncHandler(async (req, res) => {
+  
+    const { star,comment, prodId } = req.body; // Star rating and Product ID
+    const userId = req.user._id; // User ID
+   
+
+    try {
+        const product = await Product.findById(prodId);
+        
+        // Check if product exists
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
+        // Check if the user has already rated the product
+        const alreadyRatedIndex =  product.ratings.find((rating) => rating.postedby?.toString() === userId.toString());
+
+        if (alreadyRatedIndex) {
+           
+            alreadyRatedIndex.star = star;
+            alreadyRatedIndex.comment = comment; // Update the comment
+          } else {
+            
+            product.ratings.push({ star,comment, postedby: userId });
+          }
+           // Calculate the average rating
+        const totalStars = product.ratings.reduce((acc, rating) => acc + rating.star, 0);
+        const totalRatings = product.ratings.length;
+        product.totalRatings = (totalStars / totalRatings).toFixed(1); // Set to 1 decimal place
+
+        // Save the updated product
+        await product.save();
+
+        return res.json({ message: "Rating submitted successfully", product });
+    } catch (error) {
+        console.error(error); // Log the error for debugging
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+  
+
+module.exports = {createProduct,getProduct,getAllProducts,updateProduct,deleteProduct,addToWishlist,rating};

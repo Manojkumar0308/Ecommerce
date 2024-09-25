@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
 
+const ratingSchema = new mongoose.Schema({
+    star: { type: Number},
+    postedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User'},
+});
 const productSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -45,14 +49,13 @@ const productSchema = new mongoose.Schema({
         type: String,
         required: false
     },
-    ratings: [
-        {
-            star: Number,
-            postedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
-        }
-    ],
+    ratings: [{
+        star: Number,
+        comment: String,
+        postedby: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      },],
     totalRatings: {
-        type: Number,
+        type: String,
         default: 0
     }
 },{timestamp:true},);

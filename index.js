@@ -9,6 +9,10 @@ require('dotenv').config();
 const authRoute = require('./routes/authRoute');
 const productRoute = require('./routes/productRoute');
 const blogRoute = require('./routes/blogRoute');
+const prodCatRoute = require('./routes/prodCatRoute');
+const blogCatRoute = require('./routes/blogCatRoute');
+const brandCatRoute = require('./routes/brandCatRoute');
+const couponRoute = require('./routes/couponRoute');
 // Use default port if environment variable is not set
 const PORT = process.env.PORT || 4000;
 
@@ -28,6 +32,10 @@ app.use(morgan('dev'));
 app.use('/api/user', authRoute);
 app.use('/api/product', productRoute);
 app.use('/api/blog', blogRoute);
+app.use('/api/prodCategory',prodCatRoute);
+app.use('/api/blogCategory',blogCatRoute);
+app.use('/api/brandCategory',brandCatRoute);
+app.use('/api/coupon',couponRoute);
 
 
 // Error handling middlewares
