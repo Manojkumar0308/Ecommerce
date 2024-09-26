@@ -13,6 +13,7 @@ const prodCatRoute = require('./routes/prodCatRoute');
 const blogCatRoute = require('./routes/blogCatRoute');
 const brandCatRoute = require('./routes/brandCatRoute');
 const couponRoute = require('./routes/couponRoute');
+const uploadRoute = require('./routes/uploadRoute');
 // Use default port if environment variable is not set
 const PORT = process.env.PORT || 4000;
 
@@ -36,6 +37,7 @@ app.use('/api/prodCategory',prodCatRoute);
 app.use('/api/blogCategory',blogCatRoute);
 app.use('/api/brandCategory',brandCatRoute);
 app.use('/api/coupon',couponRoute);
+app.use('/api/upload',uploadRoute);
 
 
 // Error handling middlewares
