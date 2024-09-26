@@ -1,6 +1,7 @@
 const fs = require("fs");
-const Product = require("../models/productModel");
 const asyncHandler = require("express-async-handler");
+const Product = require("../models/productModel");
+
 const { validateMongoDbId } = require("../utils/validateMongoDbId");
 
 const {
@@ -27,8 +28,8 @@ const uploadImages = asyncHandler(async (req, res) => {
           return file;
         }),
       },
-      { new: true }
-    )
+      { new: true}
+    );
    
     res.json(findProduct);
   } catch (error) {
