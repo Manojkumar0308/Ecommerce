@@ -1,7 +1,10 @@
 const Product = require('../models/productModel');
+const fs = require('fs');
 const User = require('../models/userModel');
 const asyncHandler = require('express-async-handler');
 const slugify = require('slugify');
+const path = require('path');
+const {validateMongoDbId} = require('../utils/validateMongoDbId');
 const createProduct = asyncHandler(async (req, res) => {
 
     try {
@@ -249,6 +252,53 @@ const rating = asyncHandler(async (req, res) => {
     }
 });
 
-  
+  // Upload images locally and store URLs in MongoDB
+  const uploadImages = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    validateMongoDbId(id);
 
-module.exports = {createProduct,getProduct,getAllProducts,updateProduct,deleteProduct,addToWishlist,rating};
+    try {
+        const urls = [];
+        const files = req.files;
+
+        // Loop through each file and save it to the local directory
+        for (const file of files) {
+            const filename = `${Date.now()}-${file.originalname}`;
+            const savePath = path.join(__dirname, '../public/images/products', filename);
+            console.log('savepath',savePath)
+            // Move file to the public directory
+            fs.renameSync(file.path, savePath);
+
+            // Construct the URL for the stored image
+            const imageUrl = `http://localhost:3000/public/images/products/${filename}`;
+            urls.push(imageUrl);
+
+            // Delay the unlink operation to ensure the file is no longer locked
+            setTimeout(() => {
+                fs.unlinkSync(`./public/images/products/${filename}`, (err) => {
+                    if (err) {
+                        console.error(`Failed to delete local image file: ${savePath}. Error: `, err);
+                    }
+                });
+            }, 1000);  // Delay by 1 second
+        }
+
+        // Update the product with the uploaded image URLs
+        const updatedProduct = await Product.findByIdAndUpdate(
+            id,
+            { images: urls },  // Save the image URLs in the "images" field of the product
+            { new: true }  // Return the updated product
+        );
+
+        res.json({
+            success: true,
+            product: updatedProduct
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+module.exports = {createProduct,getProduct,getAllProducts,updateProduct,deleteProduct,addToWishlist,rating,uploadImages};

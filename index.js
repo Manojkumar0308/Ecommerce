@@ -16,7 +16,7 @@ const couponRoute = require('./routes/couponRoute');
 const uploadRoute = require('./routes/uploadRoute');
 // Use default port if environment variable is not set
 const PORT = process.env.PORT || 4000;
-
+const path = require('path');
 
 console.log('Process.env.PORT:', process.env.PORT); // Should print '3000'
 console.log('PORT:', PORT); // Should print '3000' if dotenv is correctly loaded
@@ -28,6 +28,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(morgan('dev'));
+// Serve static files from the 'public' directory
+app.use('/public', express.static(path.join(__dirname, 'public')));
+
 
 // Use routes
 app.use('/api/user', authRoute);
