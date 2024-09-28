@@ -5,6 +5,7 @@ const asyncHandler = require('express-async-handler');
 const slugify = require('slugify');
 const path = require('path');
 const {validateMongoDbId} = require('../utils/validateMongoDbId');
+
 const createProduct = asyncHandler(async (req, res) => {
 
     try {
@@ -252,6 +253,18 @@ const rating = asyncHandler(async (req, res) => {
     }
 });
 
+
+const unlinkFile = (filePath) => {
+    return new Promise((resolve, reject) => {
+        fs.unlink(filePath, (err) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve();
+        });
+    });
+};
+
   // Upload images locally and store URLs in MongoDB
   const uploadImages = asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -274,12 +287,22 @@ const rating = asyncHandler(async (req, res) => {
             urls.push(imageUrl);
 
             // Delay the unlink operation to ensure the file is no longer locked
-            setTimeout(() => {
-                fs.unlinkSync(`./public/images/products/${filename}`, (err) => {
-                    if (err) {
-                        console.error(`Failed to delete local image file: ${savePath}. Error: `, err);
+            setTimeout(async () => {
+                try {
+                    if (fs.existsSync(savePath)) {
+                        await unlinkFile(savePath);
+                        console.log(`Successfully deleted: ${savePath}`);
+                    } else {
+                        console.error(`File does not exist: ${savePath}`);
                     }
-                });
+                } catch (err) {
+                    console.error(`Failed to delete local image file: ${savePath}. Error: `, err);
+                }
+                // fs.unlinkSync(`./public/images/products/${filename}`, (err) => {
+                //     if (err) {
+                //         console.error(`Failed to delete local image file: ${savePath}. Error: `, err);
+                //     }
+                // });
             }, 1000);  // Delay by 1 second
         }
 
