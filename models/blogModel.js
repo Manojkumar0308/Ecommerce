@@ -41,10 +41,8 @@ var blogSchema = new mongoose.Schema({
             ref:"User"
         }
     ],
-    image:{
-        type:String,
-        default:"https://www.techtarget.com/rms/onlineimages/what_is_a_blog_used_for-f_mobile.png"
-    },
+    images:{type:Array},
+    
     author:{
         type:String,
         default:"Admin"

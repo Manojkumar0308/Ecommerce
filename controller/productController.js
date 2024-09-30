@@ -3,7 +3,8 @@ const fs = require('fs');
 const User = require('../models/userModel');
 const asyncHandler = require('express-async-handler');
 const slugify = require('slugify');
-const path = require('path');
+const {cloudinaryUploadImg} = require('../utils/cloudinary');
+
 const {validateMongoDbId} = require('../utils/validateMongoDbId');
 
 const createProduct = asyncHandler(async (req, res) => {
@@ -254,74 +255,38 @@ const rating = asyncHandler(async (req, res) => {
 });
 
 
-const unlinkFile = (filePath) => {
-    return new Promise((resolve, reject) => {
-        fs.unlink(filePath, (err) => {
-            if (err) {
-                return reject(err);
-            }
-            resolve();
-        });
-    });
-};
 
   // Upload images locally and store URLs in MongoDB
-  const uploadImages = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    validateMongoDbId(id);
-
+  const uploadProductImages = async (req, res) => {
     try {
-        const urls = [];
-        const files = req.files;
-
-        // Loop through each file and save it to the local directory
-        for (const file of files) {
-            const filename = `${Date.now()}-${file.originalname}`;
-            const savePath = path.join(__dirname, '../public/images/products', filename);
-            console.log('savepath',savePath)
-            // Move file to the public directory
-            fs.renameSync(file.path, savePath);
-
-            // Construct the URL for the stored image
-            const imageUrl = `http://localhost:3000/public/images/products/${filename}`;
-            urls.push(imageUrl);
-
-            // Delay the unlink operation to ensure the file is no longer locked
-            setTimeout(async () => {
-                try {
-                    if (fs.existsSync(savePath)) {
-                        await unlinkFile(savePath);
-                        console.log(`Successfully deleted: ${savePath}`);
-                    } else {
-                        console.error(`File does not exist: ${savePath}`);
-                    }
-                } catch (err) {
-                    console.error(`Failed to delete local image file: ${savePath}. Error: `, err);
-                }
-                // fs.unlinkSync(`./public/images/products/${filename}`, (err) => {
-                //     if (err) {
-                //         console.error(`Failed to delete local image file: ${savePath}. Error: `, err);
-                //     }
-                // });
-            }, 1000);  // Delay by 1 second
-        }
-
-        // Update the product with the uploaded image URLs
-        const updatedProduct = await Product.findByIdAndUpdate(
-            id,
-            { images: urls },  // Save the image URLs in the "images" field of the product
-            { new: true }  // Return the updated product
-        );
-
-        res.json({
-            success: true,
-            product: updatedProduct
-        });
+      const { id } = req.params;
+      
+      // Check if product exists
+      const product = await Product.findById(id);
+      if (!product) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+  
+      const imageUploadPromises = req.files.map(async (file) => {
+        const result = await cloudinaryUploadImg(file.buffer); // Upload using buffer
+        return result.url;
+      });
+  
+      const uploadedImageUrls = await Promise.all(imageUploadPromises);
+  
+      // Update the product's images array with Cloudinary URLs
+      const updatedProduct = await Product.findByIdAndUpdate(
+        id,
+        { images: uploadedImageUrls },
+        { new: true }
+      );
+  
+      res.status(200).json({
+        message: 'Images uploaded successfully',
+        product: updatedProduct
+      });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
+      res.status(500).json({ message: error.message });
     }
-});
-module.exports = {createProduct,getProduct,getAllProducts,updateProduct,deleteProduct,addToWishlist,rating,uploadImages};
+  };
+module.exports = {createProduct,getProduct,getAllProducts,updateProduct,deleteProduct,addToWishlist,rating,uploadProductImages};
